@@ -8,13 +8,13 @@ const products = [
 ]
 
 router.get('/products', (req, res) =>{
-    res.send(products);
+    res.status(200).send(products);
 });
 
 router.get('/products/:id', (req, res) =>{
     const prod = products.find(p => p.product_id === parseInt(req.params.id));
     if(!prod) res.status(404).send('The product not found!');
-    res.send(prod);
+    res.status(200).send(prod);
 });
 
 router.post('/products', (req, res) => {
@@ -37,7 +37,7 @@ router.put('/products/:id', (req, res) =>{
     if (error) return res.status(400).send(error.details[0].message);
 
     prod.product_name = req.body.product_name;
-    res.send(prod);
+    res.status(200).send(prod);
 });
 
 router.delete('/products/:id', (req, res) =>{
@@ -47,7 +47,7 @@ router.delete('/products/:id', (req, res) =>{
     const index = products.indexOf(prod);
     products.splice(index, 1);
 
-    res.send(prod);
+    res.status(200).send(prod);
 })
 
 module.exports = router
