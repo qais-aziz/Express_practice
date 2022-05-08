@@ -1,14 +1,13 @@
 const express = require('express');
+const Joi = require('joi');
+const { getProducts, insertProduct, updateProduct, deleteProduct} = require('../utils/db_utils');
 const router = express.Router();
+const { schema } = require('joi/lib/types/object');
 
-const products = [
-    {product_id: 1, product_name: 'sunsilk'},
-    {prodcut_id: 2, product_name: 'ponds'},
-    {product_id: 3, product_name: 'product3'}
-]
-
-router.get('/products', (req, res) =>{
-    res.status(200).send(products);
+router.get('/products', async (req, res) =>{
+    //res.status(200).send(products);
+    const data = await getProducts();
+    res.json(data);
 });
 
 router.get('/products/:id', (req, res) =>{
@@ -17,37 +16,49 @@ router.get('/products/:id', (req, res) =>{
     res.status(200).send(prod);
 });
 
-router.post('/products', (req, res) => {
+router.post('/products', async (req, res) => {
     const {error} = validateProd(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
     const prod = {
-        product_id: products.length + 1,
-        product_name: req.body.product_name
+        name: req.body.p_name.trim().toLowerCase(),
+        code: req.body.p_code.trim()
     };
-    products.push(prod);
-    res.send(prod);
+   const data = await insertProduct(prod.name, prod.code);
+   console.log(prod.name);
+   res.status(200).json(data);
 });
 
-router.put('/products/:id', (req, res) =>{
-    const prod = products.find(p => p.product_id === parseInt(req.params.id));
-    if(!prod) return res.status(404).send('The product not found!');
+router.put('/products/:id', async (req, res) =>{
+    // const prod = products.find(p => p.product_id === parseInt(req.params.id));
+    // if(!prod) return res.status(404).send('The product not found!');
 
-    const {error} = validateProd(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
+    const prod = {
+        name: req.body.p_name?.trim()?.toLowerCase(),
+        code: req.body.p_code?.trim(),
+        pid: parseInt(req.params.id)
+    };
 
-    prod.product_name = req.body.product_name;
-    res.status(200).send(prod);
+    const data = await updateProduct(prod.name, prod.code, prod.pid);
+
+    res.status(200).json(data);
 });
 
-router.delete('/products/:id', (req, res) =>{
-    const prod = products.find(p => p.product_id === parseInt(req.params.id));
-    if(!prod) return res.status(404).send('The product not found!');
+router.delete('/products/:id', async (req, res) =>{
+    
+       const pid = parseInt(req.params.id)
 
-    const index = products.indexOf(prod);
-    products.splice(index, 1);
+    const data = await deleteProduct(pid);
+    res.status(200).json(data);
+});
 
-    res.status(200).send(prod);
-})
+function validateProd(prod){
+    const schema = {
+        p_name: Joi.string().trim().min(3).max(20).required(),
+        p_code: Joi.string().min(3).max(8).required()
+    };
+
+    return Joi.validate(prod, schema);
+}
 
 module.exports = router
